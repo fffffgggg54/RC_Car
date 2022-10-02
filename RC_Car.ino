@@ -105,20 +105,18 @@ void setup() {
   //  2    0.125°C     130 ms
   //  3    0.0625°C    250 ms
   tempC_lock = xSemaphoreCreateMutex(); // create mutex
-  xTaskCreatePinnedToCore(setLED,         // function to call
+  xTaskCreate(setLED,         // function to call
               "Conditional LED Blink",    // task name
               1024,                       // task stack size (bytes)
               NULL,                       // parameters to pass
               1,                          // task priority, 0 to configMAX_PRIORITIES-1
-              NULL,                       // task handle
-              1);                         // run on one core for demo (ESP32 only)
-  xTaskCreatePinnedToCore(readTempC,
+              NULL);                      // task handle
+  xTaskCreate(readTempC,
               "Temperature Sensor Read",
               2048,
               NULL,
               1,
-              NULL,
-              1);
+              NULL);
 
 }
 
