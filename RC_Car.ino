@@ -10,11 +10,74 @@
 // Create the MCP9808 temperature sensor object
 Adafruit_MCP9808 tempsensor = Adafruit_MCP9808();
 
-int tempLimit = 30; // temperature limit in degrees C
+float tempLimit = 30; // temperature limit in degrees C
+static const int led_pin = 2;
+static float tempC = 0;
+static SemaphoreHandle_t tempC_lock;
+
+void setLED(void *parameter){
+  float tempC_local = 0;
+  bool ledPowerOn = false;
+  while(1){
+    if(xSemaphoreTake(tempC_lock, 0) == pdTRUE){
+      tempC_local = tempC;
+      Serial.println(tempC);
+      Serial.println(tempC_local, 4);
+      xSemaphoreGive(tempC_lock);
+      Serial.println("got value");
+    }
+    ledPowerOn = tempC_local > tempLimit;
+
+
+    if(ledPowerOn) {
+      digitalWrite(led_pin, HIGH);
+      Serial.print("Blinking led because temperature is "); Serial.print(tempC_local, 4); Serial.print("*C, ");
+      Serial.print("which exceeds the limit of "); Serial.print(tempLimit); Serial.println("*C");
+    }
+    else {
+      digitalWrite(led_pin, LOW);
+      Serial.print("Temperature is at "); Serial.print(tempC_local, 4); Serial.print("*C, ");
+      Serial.print("which is below the limit of "); Serial.print(tempLimit); Serial.println("*C");
+    }
+    vTaskDelay(200/portTICK_PERIOD_MS);
+    digitalWrite(led_pin, LOW);
+    vTaskDelay(200/portTICK_PERIOD_MS);
+  }
+}
+
+
+void readTempC(void *parameter){
+  while(1){
+    tempsensor.wake();   // wake up, ready to read!
+
+
+    float c = tempsensor.readTempC();
+    float f = tempsensor.readTempF();
+
+    
+    Serial.print("Temp: "); 
+    Serial.print(c, 4); Serial.print("*C\t and "); 
+    Serial.print(f, 4); Serial.println("*F.");
+    if(xSemaphoreTake(tempC_lock, 0) == pdTRUE){
+      tempC = c;
+      Serial.println("writing temperature");
+      xSemaphoreGive(tempC_lock);
+    }
+
+    tempsensor.shutdown_wake(1); // shutdown MSP9808 - power consumption ~0.1 mikro Ampere, stops temperature sampling
+
+    vTaskDelay(500/portTICK_PERIOD_MS);
+
+
+
+  }
+
+
+}
 
 void setup() {
-  pinMode(13, OUTPUT);
-  Serial.begin(9600);
+  pinMode(led_pin, OUTPUT);
+  Serial.begin(115200);
   while (!Serial); //waits for serial terminal to be open, necessary in newer arduino boards.
   Serial.println("MCP9808 demo");
   
@@ -44,25 +107,24 @@ void setup() {
   //  1    0.25°C      65 ms
   //  2    0.125°C     130 ms
   //  3    0.0625°C    250 ms
+  tempC_lock = xSemaphoreCreateMutex();
+  xTaskCreatePinnedToCore(setLED,
+              "Conditional LED Blink",
+              1024,
+              NULL,
+              1,
+              NULL,
+              1);
+  xTaskCreatePinnedToCore(readTempC,
+              "Temperature Sensor Read",
+              2048,
+              NULL,
+              1,
+              NULL,
+              1);
+
 }
 
 void loop() {
-  Serial.println("wake up MCP9808.... "); // wake up MCP9808 - power consumption ~200 mikro Ampere
-  tempsensor.wake();   // wake up, ready to read!
-
-  // Read and print out the temperature, also shows the resolution mode used for reading.
-  Serial.print("Resolution in mode: ");
-  Serial.println (tempsensor.getResolution());
-  float c = tempsensor.readTempC();
-  float f = tempsensor.readTempF();
-  Serial.print("Temp: "); 
-  Serial.print(c, 4); Serial.print("*C\t and "); 
-  Serial.print(f, 4); Serial.println("*F.");
-  if(c > tempLimit) { digitalWrite(13, HIGH); }
-  delay(200);
-  digitalWrite(13, LOW);
-  Serial.println("Shutdown MCP9808.... ");
-  tempsensor.shutdown_wake(1); // shutdown MSP9808 - power consumption ~0.1 mikro Ampere, stops temperature sampling
-  Serial.println("");
-  delay(200);
+  
 }
