@@ -1,83 +1,20 @@
-// for now this is a placeholder for the main program.
-// currently uses an MCP9808 I2C temp sensor and has basic cutoff logic
-// will be replaced with thermistors
+#include "config.h"
+#include "gps.h"
+#include "temperature_mcp9808.h"
 
-
-
-#include <Wire.h>
-#include "Adafruit_MCP9808.h"
-
-// Create the MCP9808 temperature sensor object
-Adafruit_MCP9808 tempsensor = Adafruit_MCP9808();
-
-float tempLimit = 30; // temperature limit in degrees C
-static const int led_pin = 2;
-static float tempC = 0;
-static SemaphoreHandle_t tempC_lock;
-
-void setLED(void *parameter){
-  float tempC_local = 0;
-  bool ledPowerOn = false;
-  while(1){
-    if(xSemaphoreTake(tempC_lock, 0) == pdTRUE){
-      tempC_local = tempC;
-      xSemaphoreGive(tempC_lock);
-    }
-    ledPowerOn = tempC_local > tempLimit;
-
-
-    if(ledPowerOn) {
-      digitalWrite(led_pin, HIGH);
-      Serial.print("Blinking led because temperature is "); Serial.print(tempC_local, 4); Serial.print("*C, ");
-      Serial.print("which exceeds the limit of "); Serial.print(tempLimit); Serial.println("*C");
-    }
-    else {
-      digitalWrite(led_pin, LOW);
-      Serial.print("Temperature is at "); Serial.print(tempC_local, 4); Serial.print("*C, ");
-      Serial.print("which is below the limit of "); Serial.print(tempLimit); Serial.println("*C");
-    }
-    vTaskDelay(200/portTICK_PERIOD_MS);
-    digitalWrite(led_pin, LOW);
-    vTaskDelay(200/portTICK_PERIOD_MS);
-  }
-}
-
-
-void readTempC(void *parameter){
-  while(1){
-    tempsensor.wake();   // wake up, ready to read!
-
-
-    float c = tempsensor.readTempC();
-    float f = tempsensor.readTempF();
-
-    
-    Serial.print("Temp: "); 
-    Serial.print(c, 4); Serial.print("*C\t and "); 
-    Serial.print(f, 4); Serial.println("*F.");
-    if(xSemaphoreTake(tempC_lock, 0) == pdTRUE){
-      tempC = c;
-      Serial.println("writing temperature");
-      xSemaphoreGive(tempC_lock);
-    }
-
-    tempsensor.shutdown_wake(1); // shutdown MSP9808 - power consumption ~0.1 mikro Ampere, stops temperature sampling
-
-    vTaskDelay(500/portTICK_PERIOD_MS);
-
-
-
-  }
-
-
-}
 
 void setup() {
-  pinMode(led_pin, OUTPUT);
+  // basic setup
+
   Serial.begin(115200);
-  while (!Serial); //waits for serial terminal to be open, necessary in newer arduino boards.
-  Serial.println("MCP9808 demo");
-  
+  while (!Serial) {}
+
+  // go through the devices, performing the necesary setup and creating the tasks if config.h says to
+
+
+#ifdef USE_TEMP_MCP9808
+  pinMode(led_pin, OUTPUT);
+
   // Make sure the sensor is found, you can also pass in a different i2c
   // address with tempsensor.begin(0x19) for example, also can be left in blank for default address use
   // Also there is a table with all addres possible for this sensor, you can connect multiple sensors
@@ -93,24 +30,25 @@ void setup() {
   //  1  1  1   0x1F
   if (!tempsensor.begin(0x18)) {
     Serial.println("Couldn't find MCP9808! Check your connections and verify the address is correct.");
-    while (1);
+    while (1)
+      ;
   }
-    
-   Serial.println("Found MCP9808!");
 
-  tempsensor.setResolution(3); // sets the resolution mode of reading, the modes are defined in the table bellow:
+  Serial.println("Found MCP9808!");
+
+  tempsensor.setResolution(3);  // sets the resolution mode of reading, the modes are defined in the table bellow:
   // Mode Resolution SampleTime
   //  0    0.5°C       30 ms
   //  1    0.25°C      65 ms
   //  2    0.125°C     130 ms
   //  3    0.0625°C    250 ms
-  tempC_lock = xSemaphoreCreateMutex(); // create mutex
-  xTaskCreate(setLED,         // function to call
-              "Conditional LED Blink",    // task name
-              1024,                       // task stack size (bytes)
-              NULL,                       // parameters to pass
-              1,                          // task priority, 0 to configMAX_PRIORITIES-1
-              NULL);                      // task handle
+
+  xTaskCreate(setLED,                   // function to call
+              "Conditional LED Blink",  // task name
+              1024,                     // task stack size (bytes)
+              NULL,                     // parameters to pass
+              1,                        // task priority, 0 to configMAX_PRIORITIES-1
+              NULL);                    // task handle
   xTaskCreate(readTempC,
               "Temperature Sensor Read",
               2048,
@@ -118,8 +56,33 @@ void setup() {
               1,
               NULL);
 
+#endif
+
+
+
+#ifdef USE_GPS
+  // initialize Serial2 for use with GPS
+  // softwareserial doesn't work with 115200 and a buffer of 64 bytes and a report rate of 10hz
+  // if needed, the module can be reconfigured to operate at a lower baud rate and report rate
+  // allowing use of softwareserial
+  Serial2.begin(GPSBaud);
+
+  // task to periodically check if there is new data from the gps and if so, parse it using the gps object
+  xTaskCreate(gpsUpdate,
+              "GPSParse",
+              2048,
+              NULL,
+              2,
+              NULL);
+  // task to handle fresh data in the gps object after reading from it
+  xTaskCreate(gpsReadData,
+              "GPSOBJRead",
+              2048,
+              NULL,
+              1,
+              NULL);
+
+#endif
 }
 
-void loop() {
-  
-}
+void loop() {}
