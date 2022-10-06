@@ -1,36 +1,15 @@
-// config options
-// comment lines out to disable features
-/*
-#define USE_GPS
-
-#define USE_TEMP_MCP9808
-*/
-
-
 #include "config.h"
 #include "gps.h"
 #include "temperature_mcp9808.h"
 
 
 void setup() {
-
-
-
-
-  /***********************************************
-  *
-  *       BASIC SETUP
-  *
-  ***********************************************/
+  // basic setup
 
   Serial.begin(115200);
   while (!Serial) {}
 
-  /***********************************************
-  *
-  *       DEVICE SPECIFIC SETUP
-  *
-  ***********************************************/
+  // go through the devices, performing the necesary setup and creating the tasks if config.h says to
 
 
 #ifdef USE_TEMP_MCP9808

@@ -1,5 +1,7 @@
 #include "config.h"
+
 #ifdef USE_GPS
+
 #include "gps.h"
 #include <TinyGPSPlus.h>
 
