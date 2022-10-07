@@ -31,11 +31,8 @@ void setLED(void *parameter) {
       digitalWrite(led_pin, LOW);
     }
 
-    Serial.print("[TEMP main] ");
-    Serial.print(tempC_local);
-    Serial.print(" ");
-    Serial.print(ledPowerOn ? 1 : 0);
-    Serial.println();
+    Serial.printf("[TEMP main] %.3f °C", tempC_local);
+    ledPowerOn ? Serial.println(" [ALERT]") : NULL;
 
     vTaskDelay(200 / portTICK_PERIOD_MS);
     digitalWrite(led_pin, LOW);

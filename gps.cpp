@@ -36,11 +36,35 @@ void gpsReadData(void *parameter) {
   //Serial.println(F("----------------------------------------------------------------------------------------------------------------------------------------"));
   while (1) {
     ulTaskNotifyTake(pdTRUE, 5000);  // wait for signal from gpsUpdate() for 5000ms
-    static const double LONDON_LAT = 51.508131, LONDON_LON = -0.128002;
+    //static const double LONDON_LAT = 51.508131, LONDON_LON = -0.128002;
 
     // print a bunch of stuff
     // will be replaced with other logic to handle event in future
 
+    //hopefully, this macro should work
+    #define DATA_TO_SERIAL(attr, value) Serial.print("[GPS] "#attr"."#value": "); Serial.println(attr.valid() ? attr.value() : "(invalid)");
+
+    DATA_TO_SERIAL(gps.satellites, value);
+    DATA_TO_SERIAL(gps.hdop, hdop);
+    DATA_TO_SERIAL(gps.location, lat);
+    DATA_TO_SERIAL(gps.location, lng);
+    DATA_TO_SERIAL(gps.location, age);
+
+    DATA_TO_SERIAL(gps.altitude, meters);
+    DATA_TO_SERIAL(gps.course, deg);
+    DATA_TO_SERIAL(gps.speed, kmph);
+
+    Serial.print("[GPS] datetime: %02d-%02d-%02d %02d:%02d:%02d", 
+      gps.date.year(),
+      gps.date.month(),
+      gps.date.day(),
+      gps.time.hour(),
+      gps.time.minute(),
+      gps.time.second()
+    );
+
+    #undef DATA_TO_SERIAL
+    /*
     printInt(gps.satellites.value(), gps.satellites.isValid(), 5);
     printFloat(gps.hdop.hdop(), gps.hdop.isValid(), 6, 1);
     printFloat(gps.location.lat(), gps.location.isValid(), 11, 6);
@@ -73,21 +97,23 @@ void gpsReadData(void *parameter) {
     const char *cardinalToLondon = TinyGPSPlus::cardinal(courseToLondon);
 
     printStr(gps.location.isValid() ? cardinalToLondon : "*** ", 6);
+    */
 
     // gps parsing diagnostics
     // sentencesWithFix() should go up while failedChecksum() should stay at 0
 
-    printInt(gps.charsProcessed(), true, 6);
-    printInt(gps.sentencesWithFix(), true, 10);
-    printInt(gps.failedChecksum(), true, 9);
-    Serial.println();
+    Serial.printf("[GPS] info-charsProcessed: %d\n", gps.charsProcessed());
+    Serial.printf("[GPS] info-sentencesWithFix: %d\n", gps.sentencesWithFix());
+    Serial.printf("[GPS] failedChecksum: %d\n", gps.failedChecksum());
 
     if (millis() > 5000 && gps.charsProcessed() < 10)
-      Serial.println(F("No GPS data received: check wiring"));
+      Serial.println("[INFO] No GPS data received: check wiring");
   }
 }
 
+// Serial.printf() exists :/
 // a bunch of helper functions for gpsReadData()
+/*
 
 void printFloat(float val, bool valid, int len, int prec) {
   if (!valid) {
@@ -143,5 +169,6 @@ void printStr(const char *str, int len) {
   for (int i = 0; i < len; ++i)
     Serial.print(i < slen ? str[i] : ' ');
 }
+*/
 
 #endif
