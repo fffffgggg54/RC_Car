@@ -29,12 +29,12 @@ void setup() {
   //  1  1  0   0x1E
   //  1  1  1   0x1F
   if (!tempsensor.begin(0x18)) {
-    Serial.println("Couldn't find MCP9808! Check your connections and verify the address is correct.");
+    Serial.println("[INFO] Couldn't find MCP9808! Check your connections and verify the address is correct.");
     while (1)
       ;
   }
 
-  Serial.println("Found MCP9808!");
+  Serial.println("[INFO] Found MCP9808!");
 
   tempsensor.setResolution(3);  // sets the resolution mode of reading, the modes are defined in the table bellow:
   // Mode Resolution SampleTime

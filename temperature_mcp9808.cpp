@@ -27,21 +27,16 @@ void setLED(void *parameter) {
 
     if (ledPowerOn) {
       digitalWrite(led_pin, HIGH);
-      Serial.print("Blinking led because temperature is ");
-      Serial.print(tempC_local, 4);
-      Serial.print("*C, ");
-      Serial.print("which exceeds the limit of ");
-      Serial.print(tempLimit);
-      Serial.println("*C");
     } else {
       digitalWrite(led_pin, LOW);
-      Serial.print("Temperature is at ");
-      Serial.print(tempC_local, 4);
-      Serial.print("*C, ");
-      Serial.print("which is below the limit of ");
-      Serial.print(tempLimit);
-      Serial.println("*C");
     }
+
+    Serial.print("[TEMP main] ");
+    Serial.print(tempC_local);
+    Serial.print(" ");
+    Serial.print(ledPowerOn ? 1 : 0);
+    Serial.println();
+
     vTaskDelay(200 / portTICK_PERIOD_MS);
     digitalWrite(led_pin, LOW);
     vTaskDelay(200 / portTICK_PERIOD_MS);
@@ -58,14 +53,14 @@ void readTempC(void *parameter) {
     float f = tempsensor.readTempF();
 
 
-    Serial.print("Temp: ");
-    Serial.print(c, 4);
-    Serial.print("*C\t and ");
-    Serial.print(f, 4);
-    Serial.println("*F.");
+    //Serial.print("Temp: ");
+    //Serial.print(c, 4);
+    //Serial.print("*C\t and ");
+    //Serial.print(f, 4);
+    //Serial.println("*F.");
     if (xSemaphoreTake(tempC_lock, 0) == pdTRUE) {  // get lock on tempC
       tempC = c;                                    // copy measurement to global variable
-      Serial.println("writing temperature");
+      //Serial.println("writing temperature");
       xSemaphoreGive(tempC_lock);  // release lock on tempC
     }
 
