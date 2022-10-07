@@ -9,7 +9,7 @@ float servoValue = -1;
 
 SemaphoreHandle_t servoTick_lock = xSemaphoreCreateMutex();
 
-void int_RISING(void* param){
+void servo_int_RISING(void* param){
   
   if(xSemaphoreTakeFromISR(servoTick_lock) == pdTRUE){
     
@@ -19,7 +19,7 @@ void int_RISING(void* param){
   }
 }
 
-void int_FALLING(void* param){
+void servo_int_FALLING(void* param){
 
   if(xSemaphoreTakeFromISR(servoTick_lock) == pdTRUE){
 
