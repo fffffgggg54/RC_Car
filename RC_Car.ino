@@ -1,6 +1,7 @@
 #include "config.h"
 #include "gps.h"
 #include "temperature_mcp9808.h"
+#include "servo_log.h"
 
 
 void setup() {
@@ -81,6 +82,15 @@ void setup() {
               NULL,
               1,
               NULL);
+
+#endif
+
+#ifdef USE_SERVO_LOGGING
+
+  pinMode(servoPin, INPUT);
+
+  attachInterrupt(digitalPinToInterrupt(servoPin), servo_int_RISING, RISING);
+  attachInterrupt(digitalPinToInterrupt(servoPin), servo_int_FALLING, FALLING);
 
 #endif
 }

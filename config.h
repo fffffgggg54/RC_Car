@@ -15,4 +15,9 @@
 */
 #define USE_TEMP_MCP9808
 
+/*
+*  enable/disable servo logging
+*/
+#define USE_SERVO_LOGGING
+
 #endif
