@@ -8,7 +8,7 @@ public:
 		
 		pinMode(pin, INPUT);
 
-		xQueue = xQueueCreate(6, sizeof( uint ));
+		servoQueue = xQueueCreate(6, sizeof( uint ));
 
 		attachInterrupt(digitalPinToInterrupt(pin), this->on_rising, RISING);
 		attachInterrupt(digitalPinToInterrupt(pin), this->on_falling, FALLING);
@@ -30,18 +30,16 @@ public:
 
 		float local = -1;
 
-		if(xSemaphoreTake(this->lock) == pdTRUE){
+		if(xQueueReceive(this->queue, &local, 0) == pdFALSE){
+            // queue recv failed
+        }
 
-			local = this->angle;
-			xSemaphoreGive(this->lock);
-		}
 		return local;
 	}
 
 protected:
 
-	float angle;
- 	QueueHandle_t xQueue;
+ 	QueueHandle_t servoQueue;
 
 	void task(void*){
 		
@@ -51,19 +49,17 @@ protected:
 
 		while(true){
 		
-			if( xQueueReceive(this->xQueue, &now 10) == pdTRUE){ // wait upto 10 ticks for queue message
+			if( xQueueReceive(this->servoQueue, &now 10) == pdTRUE){ // wait upto 10 ticks for queue message
 																// queue returns (t) when rising edge, and (-t) for now falling edge
 				if(now < 0){
 					high = -(now + prev);  // now - prev, but now is negative
 				}else{
 					low = now + prev; // now - prev, but prev is negative
 				}
-
-				if( xSemaphoreTake(this->lock) == pdTRUE){
 					
-					this->angle = high / (high + low) * 180; // assuming servo only goes upto 180 deg
-					xSemaphoreGive(this->lock);
-				}
+				int angle = high / (high + low) * 180; // assuming servo only goes upto 180 deg
+
+				xQueuePushBack(this->queue, angle);
 
 				b = a;
 			}
@@ -71,11 +67,11 @@ protected:
 	}
 
 	void on_rising(void){
-		xQueueSendToBackFromISR(this->xQueue,  xTaskGetTickCountFromISR());
+        xQueuePushBackFromISR(this->servoQueue,  xTaskGetTickCountFromISR());
 	}
 
 	void on_falling(void){
-		xQueueSendToBackFromISR(this->xQueue, -xTaskGetTickCountFromISR());
+        xQueuePushBackFromISR(this->servoQueue, -xTaskGetTickCountFromISR());
 	}
 
 private:

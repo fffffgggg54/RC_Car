@@ -1,4 +1,7 @@
 
+#define xQueuePushBackFromISR(queue, value) if(uxQueueSpacesAvailable(queue) == 0){ xQueueReceiveFromISR(queue); } xQueueSendToBackFromISR(queue, value)
+#define xQueuePushBack(queue, value) if(uxQueueSpacesAvailable(queue) == 0){ xQueueReceive(queue); } xQueueSendToBack(queue, value)
+
 class Sensor{
 
     /*
@@ -10,15 +13,14 @@ class Sensor{
     */
 
 protected:  // making this private makes extending classes a bit harder
-    SemaphoreHandle_t lock;
-    int value; // or float or whatever
+    QueueHandle_t queue;
 
 public:
     uint pin;
 
-    // the constructor, initializing the mutex/lock
+    // the constructor, initializing the queue
     Sensor(){ 
-        this->lock = xSemaphoreCreateMutex();
+        this->queue = xQueueCreate(5, sizeof(int)); // value type `int`
     }
 
     // create and begin task
@@ -26,8 +28,6 @@ public:
     
         this->pin = pin;
         pinMode(pin, INPUT);
-
-        this->value = -1;
 
         xTaskCreate(
             this->task,
@@ -46,10 +46,9 @@ public:
 
         while(true){
 
-            unlock(this->lock, {
-
-                this->value = analogRead(this->pin);
-            })
+            xQueuePushBackFromISR(
+                analogRead(this->pin);
+            );
 
             vTaskDelay(500 / portTICK_PERIOD_MS);
 
@@ -59,21 +58,17 @@ public:
     // an example access-function, to be accessed from the outside
     int read(){
 
-        int temp_local = -1;
-
-        unlock(this->lock, {
-
-            temp_local = this->value;
-        })
-
-        return temp_local;
+        int value = -1;
+        if(xQueueReceive(this->queue, &value, 0) == pdFALSE){
+            // queue recv failed
+        }
+        return value;
     }
 
 }
 
 
-// Usage Example:
-#ifdef THIS_IS_A_USAGE_EXAMPLE_DONT_DEFINE_THIS
+/* Usage Example:
 
 void setup(){
 
@@ -87,5 +82,4 @@ void setup(){
     // later, from another task,
     Serial.println( knob.read() );
 }
-
-#endif
+*/
