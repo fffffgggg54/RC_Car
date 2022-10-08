@@ -1,7 +1,6 @@
 // config options
 // comment lines out to disable features/modules
 
-#ifndef config_h
 #define config_h
 
 /*
@@ -15,4 +14,6 @@
 */
 #define USE_TEMP_MCP9808
 
-#endif
+
+// enable servo logging
+#define USE_SERVO_LOG

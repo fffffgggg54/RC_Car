@@ -1,7 +1,7 @@
 #include "config.h"
 #include "gps.h"
 #include "temperature_mcp9808.h"
-
+#include "servo_logging.cpp"
 
 void setup() {
   // basic setup
@@ -81,6 +81,18 @@ void setup() {
               NULL,
               1,
               NULL);
+
+#endif
+
+#ifdef USE_SERVO_LOG
+
+ServoLogger servo_0; // temporarily, test with just one servologger
+servo_0.begin(
+  15,        // pin number
+  "servo_0"  // task name
+);
+
+// servo_0.getAngle() can be called from any task (i think) and it should correctly do the mutex thing and not screw up memory
 
 #endif
 }
