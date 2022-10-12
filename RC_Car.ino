@@ -1,6 +1,7 @@
 #include "config.h"
 #include "gps.h"
 #include "temperature_mcp9808.h"
+#include "IMU_BNO055.h"
 
 
 void setup() {
@@ -81,6 +82,19 @@ void setup() {
               NULL,
               1,
               NULL);
+
+#endif
+
+#ifdef USE_IMU_BNO055
+
+  if (!bno.begin()) {
+    /* There was a problem detecting the BNO055 ... check your connections */
+    Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
+    while (1)
+      ;
+  }
+
+  xTimerStart(imuUpdateTimer, 10);
 
 #endif
 }
