@@ -2,6 +2,14 @@
 #define xQueuePushBack(queue, value) if(uxQueueSpacesAvailable(queue) == 0){ xQueueReceive(queue, nullptr, 0); } xQueueSendToBack(queue, value, pdFALSE)
 #define WRAP(classname, funcname) static funcname(void* obj){ ((classname*) obj)->__##funcname(); }; void __##funcname
 
+/*
+    `xQueuePushBack(queue, value)` pushes a value to a queue. if the queue is full, it automatically removes the first value in the queue
+    `xQueuePushBackFromISR()` is basically the same thing
+    `WRAP(class, func)` wraps a member function `func` from `class`, so it can be used as a task (note: tasks and freeRTOS stuff only use C functions 
+                                                                                                        so C++ functions need to be wrapped.
+													also, the wrapped task takes `(void*)this` as an argument)
+*/
+
 class Sensor{
 
 	QueueHandle_t queue;
