@@ -1,11 +1,12 @@
 #include "config.h"
 #include "sensor.h"
+//#include "servo_log.h"
 
 Sensor s;
 
 void mainloop(void*){
   while(1){
-    Serial.println("value: " + String(s.read()));
+    Serial.printf("value: %d\n\r", s.read());
     vTaskDelay(200);
   }
 }
@@ -21,7 +22,7 @@ void setup() {
   xTaskCreate(
     mainloop,
     "MAIN",
-    1024,
+    2048,
     NULL,
     0,
     nullptr
