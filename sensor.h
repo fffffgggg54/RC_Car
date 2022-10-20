@@ -1,6 +1,8 @@
-#define xQueuePushBackFromISR(queue, value) if(uxQueueSpacesAvailable(queue) == 0){ xQueueReceiveFromISR(queue, nullptr, 0); } xQueueSendToBackFromISR(queue, value, pdFALSE)
-#define xQueuePushBack(queue, value) if(uxQueueSpacesAvailable(queue) == 0){ xQueueReceive(queue, nullptr, 0); } xQueueSendToBack(queue, value, pdFALSE)
-#define WRAP(classname, funcname) static funcname(void* obj){ ((classname*) obj)->__##funcname(); }; void __##funcname
+#define xQueuePushBackFromISR(queue, value) auto __value = value; if(uxQueueSpacesAvailable(queue) == 0){ auto __temp_value = __value; xQueueReceiveFromISR(queue, &__temp_value, 0); Serial.print("pop | ");} xQueueSendToBackFromISR(queue, &__value, &pFALSE)
+#define xQueuePushBack(queue, value) auto __value = value; if(uxQueueSpacesAvailable(queue) == 0){ auto __temp_value = __value; xQueueReceive(queue, &__temp_value, 0); } xQueueSendToBack(queue, &__value, 0)
+#define WRAP(classname, funcname) static funcname(void* obj){ ((classname*) obj)->__##funcname(); }; void __##funcname()
+
+const auto pFALSE = pdFALSE;
 
 /*
     `xQueuePushBack(queue, value)` pushes a value to a queue. if the queue is full, it automatically removes the first value in the queue
@@ -15,49 +17,42 @@ class Sensor{
 	QueueHandle_t queue;
 public:
 	int pin;
+	void begin(int pin, int priority=1, int memory=4069){
 
-	Sensor(){
 		this->queue = xQueueCreate(6, sizeof(int));
-	}
-
-	void begin(int pin, int priority=1, int memory=512){
 		this->pin = pin;
-		Serial.println("Nothing");
 
-		char buf[20];
-		sprintf(buf, "SENSOR TASK (pin %d)", pin);
+		Serial.print("begin()");
+
+		//char buf[20];
+		//sprintf(buf, "SENSOR TASK (pin %d)", pin);
 
 		xTaskCreate(
             this->task,
-            buf,
+            "Task heeheehawhaw",//buf,
             memory,
-            (void*)this,
+            (void*) this, // need to pass `this` as an argument
             priority,
-            NULL
+            nullptr
         );
+
+        Serial.println("...task created");
 	}
 
+	void WRAP(Sensor, task){  // note: `task` is  the name of the function (being wrapped here)
+							  // functions need to be wrapped because freeRTOS cant handle C++ funcs, and instead needs static C funcs
+							  // also dont define `__task` as a function, it gets used here
 
-	/*
-	void static task(void* obj){
+		BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-		Sensor* self = (Sensor*) obj;
-		self->__task();
-
-	}
-
-	void __task(){
-	*/
-
-	void WRAP(Sensor, task){
 		while(true){
 
 			xQueuePushBack(
 				this->queue,
-				(void*) analogRead(this->pin)
+				digitalRead(this->pin)
 			);
 
-			vTaskDelay(200);
+			vTaskDelay(100);
 		}
 	}
 
