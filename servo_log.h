@@ -6,39 +6,62 @@ public:
 
 	void begin(uint pin){
 
-		this->queue = xQueueCreate(6, sizeof(int));
+		this->queue = xQueueCreate(3, sizeof(int));
 
 		pinMode(pin, INPUT);
 
-		attachInterruptArg(digitalPinToInterrupt(pin), this->on_falling, this, FALLING);
-		attachInterruptArg(digitalPinToInterrupt(pin), this->on_rising,  this, RISING);
-
+		attachInterruptArg(digitalPinToInterrupt(pin), this->interrupt, this, CHANGE);
 	}
 
-	float read(){
+	int read(){
 
-		if( uxQueueSpacesAvailable(queue) >= 3 ){
-			int t1, t2, t3;
-			xQueueReceive(this->queue, &t1, 0);
-			xQueueReceive(this->queue, &t2, 0);
-			xQueueReceive(this->queue, &t3, 0);
+		/*
+		//Serial.print( uxQueueSpacesAvailable(queue) );
+		//Serial.print(' ');
+		//if( uxQueueSpacesAvailable(queue) >= 3 ){
+		//	Serial.println("queue available");
+			int t1 = -1, t2 = -1, t3 = -1;
+			if(xQueueReceive(this->queue, &t1, 1) != pdPASS){Serial.println("fail 1");};
+			if(xQueueReceive(this->queue, &t2, 1) != pdPASS){Serial.println("fail 2");};
+			if(xQueueReceive(this->queue, &t3, 1) != pdPASS){Serial.println("fail 3");};
 
+			Serial.println(String(t1) +' '+ String(t2) +' '+ String(t3));
+
+			float out;
 			if(t1 > 0){
-				return (t1 + t2)/(t1 - t3);
+				out = (t1 + t2)/(t1 - t3);
 			}else{
-				return (t2 + t3)/(t3 - t1);
+				out = (t2 + t3)/(t3 - t1);
 			}
+			Serial.println("got: " + String(out));
+			return out;
+		}else{
+			Serial.println("waiting for queue");
 		}
+		*/
 
-		return -1;
+		int value = -1;
+
+		xQueueReceive(this->queue, &value, 0);
+
+		return value;
 
 	}
 
-	void WRAP(ServoLog, on_rising){
-		xQueueSendToBackFromISR(this->queue,  (void*)xTaskGetTickCountFromISR(), 0);
+	void WRAP(ServoLog, interrupt){
+		
+		t1 = t2;
+		t2 = t3;
+		t3 = xTaskGetTickCountFromISR();
+
+		if(digitalRead(this->pin) == HIGH && t3 != t1){
+			xQueuePushBack(this->queue, (t2 - t1) * 255/(t3 - t1));
+		}
+		
 	}
 
-	void WRAP(ServoLog, on_falling){
-		xQueueSendToBackFromISR(this->queue, (void*)(-xTaskGetTickCountFromISR()), 0);
-	}
+protected:
+	int t1;
+	int t2;
+	int t3;
 };

@@ -1,4 +1,4 @@
-#define xQueuePushBackFromISR(queue, value) auto __value = value; if(uxQueueSpacesAvailable(queue) == 0){ auto __temp_value = __value; xQueueReceiveFromISR(queue, &__temp_value, 0); Serial.print("pop | ");} xQueueSendToBackFromISR(queue, &__value, &pFALSE)
+#define xQueuePushBackFromISR(queue, value) auto __value = value; if(uxQueueSpacesAvailable(queue) == 0){ auto __temp_value = __value; xQueueReceiveFromISR(queue, &__temp_value, 0); } xQueueSendToBackFromISR(queue, &__value, 0)
 #define xQueuePushBack(queue, value) auto __value = value; if(uxQueueSpacesAvailable(queue) == 0){ auto __temp_value = __value; xQueueReceive(queue, &__temp_value, 0); } xQueueSendToBack(queue, &__value, 0)
 #define WRAP(classname, funcname) static funcname(void* obj){ ((classname*) obj)->__##funcname(); }; void __##funcname()
 
@@ -6,8 +6,8 @@
     `xQueuePushBack(queue, value)` pushes a value to a queue. if the queue is full, it automatically removes the first value in the queue
     `xQueuePushBackFromISR()` is basically the same thing
     `WRAP(class, func)` wraps a member function `func` from `class`, so it can be used as a task (note: tasks and freeRTOS stuff only use C functions 
-                                                                                                        so C++ functions need to be wrapped.
-													also, the wrapped task takes `(void*)this` as an argument)
+                                                                                                  so C++ functions need to be wrapped.
+																								  also, the wrapped task takes `(void*)this` as an argument)
 */
 
 class Sensor{
@@ -29,9 +29,9 @@ public:
             this->task,
             buf,
             memory,
-            (void*)this, // need to pass `this` as an argument
+            this, // need to pass `this` as an argument
             priority,
-            nullptr
+            NULL
         );
 
 	}
@@ -44,7 +44,7 @@ public:
 
 			xQueuePushBack(
 				this->queue,
-				digitalRead(this->pin)
+				analogRead(this->pin)
 			);
 
 			vTaskDelay(100);
