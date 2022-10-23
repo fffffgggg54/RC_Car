@@ -1,6 +1,6 @@
 #define xQueuePushBackFromISR(queue, value) auto __value = value; if(uxQueueSpacesAvailable(queue) == 0){ auto __temp_value = __value; xQueueReceiveFromISR(queue, &__temp_value, 0); } xQueueSendToBackFromISR(queue, &__value, 0)
 #define xQueuePushBack(queue, value) auto __value = value; if(uxQueueSpacesAvailable(queue) == 0){ auto __temp_value = __value; xQueueReceive(queue, &__temp_value, 0); } xQueueSendToBack(queue, &__value, 0)
-#define WRAP(classname, funcname) static funcname(void* obj){ ((classname*) obj)->__##funcname(); }; void __##funcname()
+#define WRAP(classname, funcname) static funcname(void* obj){ ((classname*) obj)->__##funcname(); }; virtual void __##funcname()
 
 /*
     `xQueuePushBack(queue, value)` pushes a value to a queue. if the queue is full, it automatically removes the first value in the queue
@@ -17,7 +17,7 @@ protected:
 
 public:
 	int pin;
-	void begin(int pin, int priority=1, int memory=1024){
+	virtual void begin(int pin, int priority=1, int memory=1024){
 
 		this->queue = xQueueCreate(3, sizeof(int));
 		this->pin = pin;
@@ -36,7 +36,7 @@ public:
 
 	}
 
-	void WRAP(Sensor, task){  // note: `task` is  the name of the function (being wrapped here)
+	virtual void WRAP(Sensor, task){  // note: `task` is  the name of the function (being wrapped here)
 							  // functions need to be wrapped because freeRTOS cant handle C++ funcs, and instead needs static C funcs
 							  // also dont define `__task` as a function, it gets used here
 

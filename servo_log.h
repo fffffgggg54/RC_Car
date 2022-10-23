@@ -4,7 +4,7 @@ class ServoLog : public Sensor{
 
 public:
 
-	void begin(uint pin){
+	virtual void begin(uint pin){
 
 		this->queue = xQueueCreate(3, sizeof(int));
 
@@ -13,7 +13,7 @@ public:
 		attachInterruptArg(digitalPinToInterrupt(pin), this->interrupt, this, CHANGE);
 	}
 
-	int read(){
+	virtual int read(){
 
 		/*
 		//Serial.print( uxQueueSpacesAvailable(queue) );
@@ -48,7 +48,7 @@ public:
 
 	}
 
-	void WRAP(ServoLog, interrupt){
+	virtual void WRAP(ServoLog, interrupt){
 		
 		t1 = t2;
 		t2 = t3;
