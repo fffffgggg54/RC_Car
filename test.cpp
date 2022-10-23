@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <cstdlib>
 #include "pickle.h"
 
 struct Point{
@@ -6,19 +7,33 @@ struct Point{
 	int y;
 };
 
+void printhex(char* c){
+	printf("0x");
+	while(*c != '\0'){
+		printf("%X", *c);
+		c++;
+	}
+	printf("\n");
+}
+
 int main(){
 
-	Point p{10, 20};
+	//int p[] = {1, 2, 3, 4, 5};
+	Point p{20, 10};
 
 	char buf[20];
-	encode(buf, &p, 'm');
+	encode(buf, 'c', &p);
 
-	printf("Point p: %d, %d\n", p.x, p.y);
-	printf("[encoded] %s\n", buf);
+	printhex(buf);
 
 	Point a;
-	decode(buf, &a);
-	printf("[decoded] Point: %d, %d\n", a.x, a.y);
+	int size = decode(buf, &a);
+
+	printf("size: %d, type: %d, cat: %c\n", size, buf[1], buf[0]);
+
+	printf("a: x=%d, y=%d\n", a.x, a.y);
+
+	printf("\n");
 
 	return 0;
 }
