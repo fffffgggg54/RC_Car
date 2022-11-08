@@ -13,6 +13,6 @@
 * comment to disable temperature sensing thru the MCP9808 module
 * eventually will be swapped out for thermistors
 */
-#define USE_TEMP_MCP9808
+//#define USE_TEMP_MCP9808
 
 #endif

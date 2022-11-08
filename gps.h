@@ -6,7 +6,7 @@
 
 #include <TinyGPSPlus.h>
 
-static const uint32_t GPSBaud = 115200;  // gps configured to run at 115200 baud
+static const uint32_t GPSBaud = 9600;  // gps configured to run at 115200 baud
 
 // make the gps object accessible when module is included
 extern TinyGPSPlus gps;
