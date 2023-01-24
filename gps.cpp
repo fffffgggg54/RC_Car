@@ -4,11 +4,38 @@
 
 #include "gps.h"
 #include <TinyGPSPlus.h>
+#include <ESP32Time.h>
+
+
+#include "FS.h"
+#include "SD.h"
+#include "SPI.h"
 
 // The TinyGPSPlus object
 TinyGPSPlus gps;
+ESP32Time rtc(-0 * 3600);
+
+void writeFile(fs::FS &fs, const char *path, const char *message) {
+  Serial.printf("Writing file: %s\n", path);
+
+  File file = fs.open(path, FILE_WRITE);
+  if (!file) {
+    Serial.println("Failed to open file for writing");
+    return;
+  }
+  if (file.print(message)) {
+    Serial.println("File written");
+  } else {
+    Serial.println("Write failed");
+  }
+  file.close();
+}
 
 void gpsUpdate(void *parameter) {
+  if (!SD.begin()) {
+    Serial.println("Card Mount Failed");
+    return;
+  }
   while (1) {
     if (Serial2.available()) {       // check if there is incoming data
       while (Serial2.available()) {  // if there is incoming data...
@@ -18,8 +45,9 @@ void gpsUpdate(void *parameter) {
       // send a signal to the task with the name "GPSOBJRead" which, in this case, is gpsReadData()
       // the signal unblocks the task and tells it to run whatever should run after getting fresh gps data
       xTaskNotifyGive(xTaskGetHandle("GPSOBJRead"));
+      writeFile(SD, "/hello.txt", "Hello ");
     }
-    vTaskDelay(10 / portTICK_PERIOD_MS);  // wait a bit, since the gps won't be sending anything for a while
+    vTaskDelay(250 / portTICK_PERIOD_MS);  // wait a bit, since the gps won't be sending anything for a while
   }
 }
 
@@ -38,9 +66,14 @@ void gpsReadData(void *parameter) {
     ulTaskNotifyTake(pdTRUE, 5000);  // wait for signal from gpsUpdate() for 5000ms
     static const double LONDON_LAT = 51.508131, LONDON_LON = -0.128002;
 
+
+    if (gps.time.isUpdated()) {
+      rtc.setTime(gps.time.second(), gps.time.minute(), gps.time.hour(), gps.date.day(), gps.date.month(), gps.date.year());
+    }
+
     // print a bunch of stuff
     // will be replaced with other logic to handle event in future
-
+    Serial.println(rtc.getDateTime());
     printInt(gps.satellites.value(), gps.satellites.isValid(), 5);
     printFloat(gps.hdop.hdop(), gps.hdop.isValid(), 6, 1);
     printFloat(gps.location.lat(), gps.location.isValid(), 11, 6);

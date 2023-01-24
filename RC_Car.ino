@@ -70,14 +70,14 @@ void setup() {
   // task to periodically check if there is new data from the gps and if so, parse it using the gps object
   xTaskCreate(gpsUpdate,
               "GPSParse",
-              2048,
+              4096,
               NULL,
               2,
               NULL);
   // task to handle fresh data in the gps object after reading from it
   xTaskCreate(gpsReadData,
               "GPSOBJRead",
-              2048,
+              4096,
               NULL,
               1,
               NULL);
