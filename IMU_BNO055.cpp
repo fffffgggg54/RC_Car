@@ -23,15 +23,18 @@ void imuUpdateServiceWrapper(TimerHandle_t xTimer){
 void imuUpdateHelper() {
   sensors_event_t orientationDataLocal, angVelocityDataLocal, linearAccelDataLocal, magnetometerDataLocal, accelerometerDataLocal, gravityDataLocal;
   uint8_t imuTempLocal, imuSystemCalLocal, imuGyroCalLocal, imuAccelCalLocal, imuMagCalLocal;
+  /*
   bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
   bno.getEvent(&angVelocityData, Adafruit_BNO055::VECTOR_GYROSCOPE);
   bno.getEvent(&linearAccelData, Adafruit_BNO055::VECTOR_LINEARACCEL);
   bno.getEvent(&magnetometerData, Adafruit_BNO055::VECTOR_MAGNETOMETER);
   bno.getEvent(&accelerometerData, Adafruit_BNO055::VECTOR_ACCELEROMETER);
   bno.getEvent(&gravityData, Adafruit_BNO055::VECTOR_GRAVITY);
+  */
   imuTempLocal = bno.getTemp();
   Serial.println(imuTempLocal);
   bno.getCalibration(&imuSystemCalLocal, &imuGyroCalLocal, &imuAccelCalLocal, &imuMagCalLocal);
+  /*
   if (xSemaphoreTake(imuData_lock, BNO055_SAMPLERATE_DELAY_MS) == pdTRUE) {  // get lock on imu data variables
     orientationData = orientationDataLocal;
     angVelocityData = angVelocityDataLocal;
@@ -46,6 +49,7 @@ void imuUpdateHelper() {
     imuMagCal = imuMagCalLocal;    // copy local variable to global
     xSemaphoreGive(imuData_lock);  // release lock on imu data variables
   }
+  */
 }
 
 

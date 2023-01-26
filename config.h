@@ -26,6 +26,6 @@
 
 /* Set the delay between fresh samples */
 
-#define BNO055_SAMPLERATE_DELAY_MS 100
+#define BNO055_SAMPLERATE_DELAY_MS 1000
 
 #endif
